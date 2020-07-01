@@ -151,6 +151,15 @@ dplasma_zgetrf_ptgpanel_Destruct( parsec_taskpool_t *tp )
     parsec_taskpool_free(tp);
 }
 
+#if defined(PARSEC_HAVE_LCI)
+static void lci_sum_op(void *dst, void *src, size_t count)
+{
+    int *d = dst;
+    int *s = src;
+    *d += *s;
+}
+#endif
+
 /**
  *******************************************************************************
  *
@@ -210,6 +219,8 @@ dplasma_zgetrf_ptgpanel( parsec_context_t *parsec,
 
 #if defined(PARSEC_HAVE_MPI)
     MPI_Allreduce( &info, &ginfo, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+#elif defined(PARSEC_HAVE_LCI)
+    lc_alreduce( &info, &ginfo, sizeof(int), lci_sum_op, *lci_global_ep);
 #else
     ginfo = info;
 #endif

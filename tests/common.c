@@ -22,8 +22,11 @@
 #if defined(PARSEC_HAVE_GETOPT_H)
 #include <getopt.h>
 #endif  /* defined(PARSEC_HAVE_GETOPT_H) */
-#ifdef PARSEC_HAVE_MPI
+#if defined(PARSEC_HAVE_MPI)
 #include <mpi.h>
+#elif defined(PARSEC_HAVE_LCI)
+#include <lc.h>
+static lc_ep ep;
 #endif
 
 char *PARSEC_SCHED_NAME[] = {
@@ -453,6 +456,9 @@ static void parse_arguments(int *iparam) {
         }
     }
 
+    parsec_setenv_mca_param( "runtime_comm_thread_multiple",
+                             iparam[IPARAM_THREAD_MT] ? "1" : "0", &environ );
+
     /* Check the process grid */
     if(0 == iparam[IPARAM_P])
         iparam[IPARAM_P] = iparam[IPARAM_NNODES];
@@ -633,7 +639,7 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
     getcwd(cwd, sizeof(cwd));
 #endif
     read_arguments(&argc, &argv, iparam);
-#ifdef PARSEC_HAVE_MPI
+#if defined(PARSEC_HAVE_MPI)
     {
         int requested = iparam[IPARAM_THREAD_MT]? MPI_THREAD_MULTIPLE: MPI_THREAD_SERIALIZED;
         int provided;
@@ -645,6 +651,11 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
     }
     MPI_Comm_size(MPI_COMM_WORLD, &iparam[IPARAM_NNODES]);
     MPI_Comm_rank(MPI_COMM_WORLD, &iparam[IPARAM_RANK]);
+#elif defined(PARSEC_HAVE_LCI)
+    lc_init(1, &ep);
+    lci_global_ep = &ep;
+    lc_get_num_proc(&iparam[IPARAM_NNODES]);
+    lc_get_proc_num(&iparam[IPARAM_RANK]);
 #else
     iparam[IPARAM_NNODES] = 1;
     iparam[IPARAM_RANK] = 0;
@@ -695,8 +706,10 @@ void cleanup_parsec(parsec_context_t* parsec, int *iparam)
 {
     parsec_fini(&parsec);
 
-#ifdef PARSEC_HAVE_MPI
+#if defined(PARSEC_HAVE_MPI)
     MPI_Finalize();
+#elif defined(PARSEC_HAVE_LCI)
+    lc_finalize();
 #endif
     (void)iparam;
 }
