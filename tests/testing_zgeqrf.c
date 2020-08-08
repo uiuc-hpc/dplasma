@@ -73,40 +73,25 @@ int main(int argc, char ** argv)
                                nodes, rank, MB, NB, LDB, NRHS, 0, 0,
                                M, NRHS, KP, KQ, P));
 
-    /* matrix generation */
-    if(loud > 3) printf("+++ Generate matrices ... ");
-    dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_dc_t *)&dcA, random_seed );
-    if( check )
-        dplasma_zlacpy( parsec, dplasmaUpperLower,
-                        (parsec_tiled_matrix_dc_t *)&dcA, (parsec_tiled_matrix_dc_t *)&dcA0 );
-    dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcT);
-    if(loud > 3) printf("Done\n");
-
-
-   PASTE_CODE_ALLOCATE_MATRIX(dcA2, 1,
-        two_dim_block_cyclic, (&dcA2, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, MB, NB, LDA, N, 0, 0,
-                               M, N, KP, KQ, P));
-    PASTE_CODE_ALLOCATE_MATRIX(dcT2, 1,
-        two_dim_block_cyclic, (&dcT2, matrix_ComplexDouble, matrix_Tile,
-                               nodes, rank, IB, NB, MT*IB, N, 0, 0,
-                               MT*IB, N, KP, KQ, P));
-
-
     int t;
     for(t = 0; t < nruns; t++) {
-        dplasma_zlacpy( parsec, uplo,
-                        (parsec_tiled_matrix_dc_t *)&dcA, (parsec_tiled_matrix_dc_t *)&dcA2 );
-        dplasma_zlacpy( parsec, uplo,
-                        (parsec_tiled_matrix_dc_t *)&dcT, (parsec_tiled_matrix_dc_t *)&dcT2 );
+        /* matrix (re)generation */
+        if(loud > 3) printf("+++ Generate matrices ... ");
+        dplasma_zpltmg( parsec, matrix_init, (parsec_tiled_matrix_dc_t *)&dcA, random_seed );
+        /* copy to check matrix only on last run */
+        if( check && t == nruns-1 )
+            dplasma_zlacpy( parsec, dplasmaUpperLower,
+                            (parsec_tiled_matrix_dc_t *)&dcA, (parsec_tiled_matrix_dc_t *)&dcA0 );
+        dplasma_zlaset( parsec, dplasmaUpperLower, 0., 0., (parsec_tiled_matrix_dc_t *)&dcT);
+        if(loud > 3) printf("Done\n");
 
         parsec_devices_release_memory();
 
         if(iparam[IPARAM_HNB] != iparam[IPARAM_NB])
         {
             SYNC_TIME_START();
-            parsec_taskpool_t* PARSEC_zgeqrf = dplasma_zgeqrf_New( (parsec_tiled_matrix_dc_t*)&dcA2,
-                                                                   (parsec_tiled_matrix_dc_t*)&dcT2 );
+            parsec_taskpool_t* PARSEC_zgeqrf = dplasma_zgeqrf_New( (parsec_tiled_matrix_dc_t*)&dcA,
+                                                                   (parsec_tiled_matrix_dc_t*)&dcT );
             /* Set the recursive size */
             dplasma_zgeqrf_setrecursive( PARSEC_zgeqrf, iparam[IPARAM_HNB] );
             parsec_context_add_taskpool(parsec, PARSEC_zgeqrf);
@@ -120,17 +105,13 @@ int main(int argc, char ** argv)
         else
         {
             PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgeqrf,
-                                      ((parsec_tiled_matrix_dc_t*)&dcA2,
-                                      (parsec_tiled_matrix_dc_t*)&dcT2),
+                                      ((parsec_tiled_matrix_dc_t*)&dcA,
+                                      (parsec_tiled_matrix_dc_t*)&dcT),
                                       dplasma_zgeqrf_Destruct( PARSEC_zgeqrf ));
         }
         parsec_devices_reset_load(parsec);
 
     }
-    dplasma_zlacpy( parsec, uplo,
-                       (parsec_tiled_matrix_dc_t *)&dcA2, (parsec_tiled_matrix_dc_t *)&dcA );
-    dplasma_zlacpy( parsec, uplo,
-                       (parsec_tiled_matrix_dc_t *)&dcT2, (parsec_tiled_matrix_dc_t *)&dcT );
     
 #if defined(PARSEC_SIM)
     {
@@ -196,11 +177,6 @@ int main(int argc, char ** argv)
     parsec_data_free(dcT.mat);
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcT);
-
-    parsec_data_free(dcA2.mat);
-    parsec_data_free(dcT2.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA2);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcT2);
 
     cleanup_parsec(parsec, iparam);
 

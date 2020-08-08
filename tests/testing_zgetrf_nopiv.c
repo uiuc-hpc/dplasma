@@ -75,13 +75,8 @@ int main(int argc, char ** argv)
                                                       nodes, rank, MB, NB, LDA, N, 0, 0,
                                                       M, N, KP, KQ, P));
 
-    /* matrix generation */
-    if(loud > 2) printf("+++ Generate matrices ... ");
-    dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, random_seed);
+    /* check matrix generation */
     if ( check ) {
-        dplasma_zlacpy( parsec, dplasmaUpperLower,
-                        (parsec_tiled_matrix_dc_t *)&dcA,
-                        (parsec_tiled_matrix_dc_t *)&dcA0 );
         dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcB, random_seed+1);
         dplasma_zlacpy( parsec, dplasmaUpperLower,
                         (parsec_tiled_matrix_dc_t *)&dcB,
@@ -91,23 +86,26 @@ int main(int argc, char ** argv)
         dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcI);
         dplasma_zlaset( parsec, dplasmaUpperLower, 0., 1., (parsec_tiled_matrix_dc_t *)&dcInvA);
     }
-    if(loud > 2) printf("Done\n");
 
-    PASTE_CODE_ALLOCATE_MATRIX(dcA2, 1,
-                               two_dim_block_cyclic, (&dcA2, matrix_ComplexDouble, matrix_Tile,
-                                                      nodes, rank, MB, NB, LDA, N, 0, 0,
-                                                      M, N, KP, KQ, P));
     int t;
     for(t = 0; t < nruns; t++) {
-        dplasma_zlacpy( parsec, uplo,
-                       (parsec_tiled_matrix_dc_t *)&dcA, (parsec_tiled_matrix_dc_t *)&dcA2 );
+        /* matrix (re)generation */
+        if(loud > 2) printf("+++ Generate matrices ... ");
+        dplasma_zplrnt( parsec, 0, (parsec_tiled_matrix_dc_t *)&dcA, random_seed);
+        /* copy to check matrix only on last run */
+        if ( check && t == nruns-1 )
+            dplasma_zlacpy( parsec, dplasmaUpperLower,
+                            (parsec_tiled_matrix_dc_t *)&dcA,
+                            (parsec_tiled_matrix_dc_t *)&dcA0 );
+        if(loud > 2) printf("Done\n");
+
         parsec_devices_release_memory();
 
         /* Create PaRSEC */
         if(loud > 2) printf("+++ Computing getrf ... ");
 
         PASTE_CODE_ENQUEUE_PROGRESS_DESTRUCT_KERNEL(parsec, zgetrf_nopiv, 
-                          ((parsec_tiled_matrix_dc_t*)&dcA2, &info),
+                          ((parsec_tiled_matrix_dc_t*)&dcA, &info),
                           dplasma_zgetrf_nopiv_Destruct( PARSEC_zgetrf_nopiv ));
 
         if(loud > 2) printf("Done.\n");
@@ -115,8 +113,6 @@ int main(int argc, char ** argv)
         parsec_devices_reset_load(parsec);
 
     }
-    dplasma_zlacpy( parsec, uplo,
-                       (parsec_tiled_matrix_dc_t *)&dcA2, (parsec_tiled_matrix_dc_t *)&dcA );
 
     if ( info != 0 ) {
         if( rank == 0 && loud ) printf("-- Factorization is suspicious (info = %d) ! \n", info );
@@ -172,8 +168,6 @@ int main(int argc, char ** argv)
 
     parsec_data_free(dcA.mat);
     parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA);
-    parsec_data_free(dcA2.mat);
-    parsec_tiled_matrix_dc_destroy( (parsec_tiled_matrix_dc_t*)&dcA2);
 
     cleanup_parsec(parsec, iparam);
 
