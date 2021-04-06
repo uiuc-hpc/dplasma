@@ -19,9 +19,18 @@ class Dplasma(CMakePackage):
     version('master', branch='master')
     version('2.0.0', '')
 
+    variant('install_tests', default=False, description='Install tests')
+
     depends_on('cmake@3.16.0:', type='build')
     depends_on('parsec')
-    depends_on('mpi')
+    depends_on('lapack')
+
+    def cmake_args(self):
+        args = [
+            self.define_from_variant('DPLASMA_INSTALL_TESTS', 'install_tests'),
+        ]
+        args.extend(self.spec['lapack'].cmake_args)
+        return args
 
     # Inherit all these features from PaRSEC
     #variant('cuda', default=True, description='Use CUDA for GPU acceleration')

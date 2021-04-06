@@ -224,12 +224,14 @@ target_include_directories(dplasma
 
 set_target_properties(dplasma PROPERTIES POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
 
+target_include_directories(dplasma PRIVATE ${LAPACKE_INCLUDE_DIRS})
+
 target_link_libraries(dplasma
   PRIVATE
   dplasma_cores
   PUBLIC
   PaRSEC::parsec
-  LAPACKE::LAPACKE
+  ${LAPACKE_LIBRARIES}
   $<$<BOOL:${DPLASMA_HAVE_CUDA}>:${CUDA_CUBLAS_LIBRARIES}>)
 set_target_properties(dplasma PROPERTIES VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}
                                        SOVERSION ${DPLASMA_VERSION_MAJOR})
