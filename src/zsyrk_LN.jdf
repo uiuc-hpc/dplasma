@@ -35,6 +35,7 @@ zsyrk(n, k) [ flops = inline_c %{ return FLOPS_ZSYRK(CLEAN_NB(descC, n), CLEAN_N
              <- ((0==k)) ? descC(n,n)
              -> ((descA->nt>=(k+2))) ? C zsyrk(n, k+1)
              -> ((descA->nt==(k+1))) ? descC(n,n)
+  CTL ctlx -> (k < (descA->nt-3)) ? ctlx zsyrk_in_data_A0(n, k+3)
 
 BODY
 {
@@ -64,6 +65,7 @@ zsyrk_in_data_A0(n, k) [profile = off]
 
   READ  A    <- descA(n,k)
              -> A zsyrk(n, k)
+  CTL ctlx   <- (k >= 3) ? ctlx zsyrk(n, k-3) //3 is a magic lookahead number
 
 BODY
 {
@@ -86,6 +88,8 @@ zgemm(n, m, k) [ flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descC, m), CLEA
              <- ((k>=1)) ? C zgemm(n, m, k-1)
              -> ((descA->nt==(k+1))) ? descC(m,n)
              -> ((descA->nt>=(k+2))) ? C zgemm(n, m, k+1)
+  CTL ctla -> (k < (descA->nt-3)) ? ctla zgemm_in_data_A0(m, k+3)
+  CTL ctlb -> (k < (descA->nt-3)) ? ctlb zgemm_in_data_A1(n, k+3)
 
 BODY
   {
@@ -118,6 +122,7 @@ zgemm_in_data_A1(n, k) [profile = off]
 
   READ  B    <- descA(n,k)
              -> B zgemm(n, (n+1)..(descC->mt-1), k)
+  CTL ctlb   <- (k >= 3) ? ctlb zgemm(n, (n+1) .. (descC->mt-1), k-3) //3 is a magic lookahead number
 
 BODY
 {
@@ -135,6 +140,7 @@ zgemm_in_data_A0(m, k) [profile = off]
 
   READ  A    <- descA(m,k)
              -> A zgemm(0..(descC->mt-2), m, k)
+  CTL ctla   <- (k >= 3) ? ctla zgemm(0 .. (m-1), m, k-3) //3 is a magic lookahead number
 
 BODY
 {
