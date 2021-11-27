@@ -109,8 +109,7 @@ BODY [type=RECURSIVE]
 
         return PARSEC_HOOK_RETURN_ASYNC;
     }
-    else
-        return PARSEC_HOOK_RETURN_NEXT;
+    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
@@ -199,8 +198,7 @@ BODY [type=RECURSIVE]
 
         return PARSEC_HOOK_RETURN_ASYNC;
     }
-    else
-        return PARSEC_HOOK_RETURN_NEXT;
+    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
@@ -311,8 +309,7 @@ BODY [type=RECURSIVE]
 
         return PARSEC_HOOK_RETURN_ASYNC;
     }
-    else
-        return PARSEC_HOOK_RETURN_NEXT;
+    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
@@ -458,8 +455,7 @@ BODY [type=RECURSIVE]
 
         return PARSEC_HOOK_RETURN_ASYNC;
     }
-    else
-        return PARSEC_HOOK_RETURN_NEXT;
+    return PARSEC_HOOK_RETURN_NEXT;
 }
 END
 
