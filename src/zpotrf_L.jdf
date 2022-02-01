@@ -37,13 +37,19 @@ extern "C" %{
  */
 static void zpotrf_L_update_INFO(parsec_taskpool_t* _tp, const parsec_recursive_cb_data_t* data)
 {
-    parsec_zpotrf_L_taskpool_t* tp = (parsec_zpotrf_L_taskpool_t*)_tp;
+    /* data->task points to parent task */
     __parsec_zpotrf_L_potrf_zpotrf_task_t* task = (__parsec_zpotrf_L_potrf_zpotrf_task_t*)data->task;
+    /* _tp points to child taskpool, we need parent taskpool, task->taskpool */
+    parsec_zpotrf_L_taskpool_t* task_tp = (parsec_zpotrf_L_taskpool_t*)task->taskpool;
 
-    if( (0 < task->locals.info.value) && (0 == *tp->_g_INFO) ) {
+    int iinfo = task->locals.info.value;
+    int *INFO = task_tp->_g_INFO;
+    int k = task->locals.k.value;
+    parsec_tiled_matrix_dc_t* descA = task_tp->_g_descA;
+
+    if ( iinfo != 0 && *INFO == 0 ) {
         /* we need to scale the INFO according to the parent taskpool tile size */
-        subtile_desc_t* st = (subtile_desc_t*)tp->_g_descA;
-        tp->_g_INFO = task->locals.info.value + task->locals.k.value * ((parsec_zpotrf_L_taskpool_t*)task->taskpool)->_g_descA->nb;
+        *INFO = k*descA->mb+iinfo;
     }
     dplasma_zpotrf_Destruct(_tp);
 }
@@ -61,7 +67,6 @@ static void zpotrf_L_update_INFO(parsec_taskpool_t* _tp, const parsec_recursive_
  *
  * WARNING: If mt is greater than 1200, we might get integer overflow.
  */
-
 %}
 
 /* Globals
@@ -106,7 +111,7 @@ BODY [type=RECURSIVE]
                                            smallnb, smallnb, 0, 0, tempkm, tempkm );
         small_descT->mat = T;
 
-        parsec_zpotrf = dplasma_zpotrf_New(uplo, (parsec_tiled_matrix_dc_t *)small_descT, &info );
+        parsec_zpotrf = dplasma_zpotrf_New(uplo, (parsec_tiled_matrix_dc_t *)small_descT, &this_task->locals.info.value );
 
         parsec_recursivecall(es, (parsec_task_t*)this_task,
                              parsec_zpotrf, zpotrf_L_update_INFO,
@@ -126,6 +131,7 @@ BODY
     int ldak = BLKLDD( descA, k );
 
     CORE_zpotrf( uplo, tempkm, T, ldak, &iinfo );
+
     if ( iinfo != 0 && *INFO == 0 )
             *INFO = k*descA->mb+iinfo; /* Should return here */
 
