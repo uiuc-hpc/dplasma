@@ -27,8 +27,8 @@ static void lci_max_op(void *dst, void *src, size_t count)
     int *s = src;
     size_t c = count / sizeof(int);
     for (size_t i = 0; i < c; i++) {
-        if (*s > *d)
-            *d = *s;
+        if (s[i] > d[i])
+            d[i] = s[i];
     }
 }
 #endif
