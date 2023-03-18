@@ -21,10 +21,10 @@ static int check_inverse( parsec_context_t *parsec, int loud,
                           parsec_tiled_matrix_dc_t *dcI );
 
 #if defined(PARSEC_HAVE_LCI)
-static void lci_max_op(void *dst, void *src, size_t count)
+static void lci_max_op(void *dst, const void *src, size_t count)
 {
     int *d = dst;
-    int *s = src;
+    const int *s = src;
     size_t c = count / sizeof(int);
     for (size_t i = 0; i < c; i++) {
         if (s[i] > d[i])
@@ -167,10 +167,7 @@ int main(int argc, char ** argv)
         }
 #elif defined(PARSEC_HAVE_LCI)
         {
-            int *lu_tab2 = (int*)malloc( MT*sizeof(int) );
-            lc_alreduce( lu_tab, lu_tab2, MT*sizeof(int), lci_max_op, *lci_global_ep);
-            memcpy( lu_tab, lu_tab2, MT*sizeof(int) );
-            free(lu_tab2);
+            lci_allreducel(lu_tab,  MT*sizeof(int), lci_max_op);
         }
 #endif
 

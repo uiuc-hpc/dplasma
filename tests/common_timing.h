@@ -60,12 +60,12 @@ static inline double get_cur_time(void)
 #elif defined(PARSEC_HAVE_LCI)
 extern _Noreturn void lci_abort(int exit_code);
 # define SYNC_TIME_START() do {                 \
-        lc_barrier(*lci_global_ep);             \
-        PARSEC_PROFILING_START();                \
+        lci_barrier();                          \
+        PARSEC_PROFILING_START();               \
         sync_time_elapsed = get_cur_time();     \
     } while(0)
 # define SYNC_TIME_STOP() do {                                  \
-        lc_barrier(*lci_global_ep);             \
+        lci_barrier();                                          \
         sync_time_elapsed = get_cur_time() - sync_time_elapsed; \
     } while(0)
 # define SYNC_TIME_PRINT(rank, print) do {                          \

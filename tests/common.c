@@ -25,8 +25,7 @@
 #if defined(PARSEC_HAVE_MPI)
 #include <mpi.h>
 #elif defined(PARSEC_HAVE_LCI)
-#include <lc.h>
-static lc_ep ep;
+#include <lci.h>
 #endif
 
 char *PARSEC_SCHED_NAME[] = {
@@ -655,10 +654,9 @@ parsec_context_t* setup_parsec(int argc, char **argv, int *iparam)
     MPI_Comm_size(MPI_COMM_WORLD, &iparam[IPARAM_NNODES]);
     MPI_Comm_rank(MPI_COMM_WORLD, &iparam[IPARAM_RANK]);
 #elif defined(PARSEC_HAVE_LCI)
-    lc_init(1, &ep);
-    lci_global_ep = &ep;
-    lc_get_num_proc(&iparam[IPARAM_NNODES]);
-    lc_get_proc_num(&iparam[IPARAM_RANK]);
+    LCI_initialize();
+    iparam[IPARAM_NNODES] = LCI_NUM_PROCESSES;
+    iparam[IPARAM_RANK] = LCI_RANK;
 #else
     iparam[IPARAM_NNODES] = 1;
     iparam[IPARAM_RANK] = 0;
@@ -712,7 +710,7 @@ void cleanup_parsec(parsec_context_t* parsec, int *iparam)
 #if defined(PARSEC_HAVE_MPI)
     MPI_Finalize();
 #elif defined(PARSEC_HAVE_LCI)
-    lc_finalize();
+    LCI_finalize();
 #endif
     (void)iparam;
 }

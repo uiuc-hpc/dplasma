@@ -152,10 +152,10 @@ dplasma_zgetrf_ptgpanel_Destruct( parsec_taskpool_t *tp )
 }
 
 #if defined(PARSEC_HAVE_LCI)
-static void lci_sum_op(void *dst, void *src, size_t count)
+static void lci_sum_op(void *dst, const void *src, size_t count)
 {
     int *d = dst;
-    int *s = src;
+    const int *s = src;
     *d += *s;
 }
 #endif
@@ -217,12 +217,15 @@ dplasma_zgetrf_ptgpanel( parsec_context_t *parsec,
         dplasma_zgetrf_ptgpanel_Destruct( parsec_zgetrf_ptgpanel );
     }
 
-#if defined(PARSEC_HAVE_MPI)
-    MPI_Allreduce( &info, &ginfo, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-#elif defined(PARSEC_HAVE_LCI)
-    lc_alreduce( &info, &ginfo, sizeof(int), lci_sum_op, *lci_global_ep);
-#else
+    /* This covers both cases when we have not compiled with MPI, or we don't need to do the reduce */
     ginfo = info;
+#if defined(PARSEC_HAVE_MPI)
+    /* If we don't need to reduce, don't do it, this way we don't require MPI to be initialized */
+    if( A->super.nodes > 1 )
+        MPI_Allreduce( &info, &ginfo, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+#elif defined(PARSEC_HAVE_LCI)
+    if( A->super.nodes > 1 )
+        lci_allreducem(&ginfo, sizeof(int), lci_sum_op);
 #endif
     return ginfo;
 }
