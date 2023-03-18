@@ -307,9 +307,7 @@ configure_package_config_file(cmake_modules/dplasma-config.cmake.in
   PATH_VARS 
     CMAKE_INSTALL_INCLUDEDIR
     CMAKE_INSTALL_DATADIR
-    CMAKE_INSTALL_LIBDIR
-    CMAKE_INSTALL_BINDIR
-    CMAKE_INSTALL_LIBEXECDIR)
+    CMAKE_INSTALL_LIBDIR)
 
 write_basic_package_version_file(${PROJECT_BINARY_DIR}/cmake_modules/dplasma-config-version.cmake
     VERSION ${DPLASMA_VERSION_MAJOR}.${DPLASMA_VERSION_MINOR}

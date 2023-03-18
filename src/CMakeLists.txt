@@ -213,7 +213,7 @@ target_ptg_sources(dplasma PRIVATE
 
 target_include_directories(dplasma
     INTERFACE
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
+    $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/include>
       $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/utils>
