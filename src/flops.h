@@ -67,7 +67,7 @@
 #define FADDS_TRMM(__side, __m, __n) ( ( (__side) == dplasmaLeft ) ? FADDS_TRMM_2((__m), (__n)) : FADDS_TRMM_2((__n), (__m)) )
 
 #define FMULS_TRSM FMULS_TRMM
-#define FADDS_TRSM FMULS_TRMM
+#define FADDS_TRSM FADDS_TRMM
 
 /*
  * Lapack

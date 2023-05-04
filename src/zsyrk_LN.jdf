@@ -29,6 +29,9 @@ zsyrk(n, k) [ flops = inline_c %{ return FLOPS_ZSYRK(CLEAN_NB(descC, n), CLEAN_N
   n = 0..(descC->nt-1)
   k = 0..(descA->nt-1)
 
+  /* For profiling compute intensity */
+  flops = inline_c %{ return FLOPS_ZSYRK(CLEAN_NB(descC, n), CLEAN_NB(descA, k)); %}
+
   /* Locality */
   : descC(n,n)
 
@@ -80,6 +83,9 @@ zgemm(n, m, k) [ flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descC, m), CLEA
   n = 0..(descC->mt-2)
   m = (n+1)..(descC->mt-1)
   k = 0..(descA->nt-1)
+
+  /* For profiling compute intensity */
+  flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descC, m), CLEAN_NB(descC, n), CLEAN_NB(descA, k)); %}
 
   /* Locality */
   : descC(m,n)

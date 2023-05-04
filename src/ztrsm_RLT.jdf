@@ -28,6 +28,9 @@ ztrsm(k,m) [ flops = inline_c %{ return FLOPS_ZTRSM(side, CLEAN_MB(descB, m), CL
   k = 0 .. (descB->nt-1)
   m = 0 .. (descB->mt-1)
 
+  /* For profiling compute intensity */
+  flops = inline_c %{ return FLOPS_ZTRSM(side, CLEAN_MB(descB, m), CLEAN_NB(descB, k)); %}
+
   : descB(m,k)
 
   READ  A <- A ztrsm_in_A0(k)
@@ -77,6 +80,9 @@ zgemm(k,m,n) [ flops = inline_c%{ return FLOPS_ZGEMM(CLEAN_MB(descB, m), CLEAN_N
   k = 0 .. (descB->nt-2)
   m = 0 .. (descB->mt-1)
   n = (k+1) .. (descB->nt-1)
+
+  /* For profiling compute intensity */
+  flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descB, m), CLEAN_NB(descB, n), descB->mb); %}
 
   : descB(m,n)
 

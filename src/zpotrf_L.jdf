@@ -88,6 +88,9 @@ potrf_zpotrf(k) [high_priority = on flops = inline_c %{ return FLOPS_ZPOTRF( CLE
 k = 0 .. descA->mt-1
 info = 0  /* For the info in the case of recursive calls */
 
+/* For profiling compute intensity */
+flops = inline_c %{ return FLOPS_ZPOTRF( CLEAN_MB(descA, k) ); %}
+
 // Parallel partitioning
 :descA(k, k)
 
@@ -150,6 +153,9 @@ potrf_ztrsm(m, k) [high_priority = on flops = inline_c %{ return FLOPS_ZTRSM(Pla
 // Execution space
 m = 1 .. descA->mt-1
 k = 0 .. m-1
+
+/* For profiling compute intensity */
+flops = inline_c %{ return FLOPS_ZTRSM(PlasmaRight, CLEAN_MB(descA, m), descA->nb); %}
 
 // Parallel partitioning
 : descA(m, k)
@@ -232,6 +238,9 @@ potrf_zherk(k, m) [high_priority = on flops = inline_c %{ return FLOPS_ZHERK(CLE
 k = 0   .. descA->mt-2
 m = k+1 .. descA->mt-1
 
+/* For profiling compute intensity */
+flops = inline_c %{ return FLOPS_ZHERK(CLEAN_MB(descA, m), descA->mb); %}
+
 // Parallel partitioning
 : descA(m, m)
 
@@ -303,6 +312,9 @@ potrf_zgemm(m, n, k) [flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descA, m),
 k = 0   .. descA->mt-3
 m = k+2 .. descA->mt-1
 n = k+1 .. m-1
+
+/* For profiling compute intensity */
+flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descA, m), descA->mb, descA->mb); %}
 
 // Parallel partitioning
 : descA(m, n)

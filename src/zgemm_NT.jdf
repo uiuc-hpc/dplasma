@@ -95,6 +95,9 @@ m = 0 .. descC->mt-1
 n = 0 .. descC->nt-1
 k = 0 .. descA->nt-1
 
+/* For profiling compute intensity */
+flops = inline_c %{ return FLOPS_ZGEMM(CLEAN_MB(descC, m), CLEAN_NB(descC, n), CLEAN_NB(descA, k)); %}
+
 // Parallel partitioning
 : descC(m, n)
 
